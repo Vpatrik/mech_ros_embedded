@@ -1,0 +1,8 @@
+<launch>
+
+	<node pkg="rosserial_python" type="serial_node.py" name="ros_arduino_imu_raw" output="screen" respawn="true">
+		<param name="~port" value="/dev/serial0" />
+		<param name="~baud" value="115200" />
+	</node>
+
+</launch>

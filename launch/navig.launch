@@ -5,8 +5,7 @@
 		<param name="~baud" value="115200" />
 	</node>
 
-<!--
-	<node pkg="urg_node" type="urg_node" name="Hokuyo" output="screen" respawn="true">
+	<!-- <node pkg="urg_node" type="urg_node" name="Hokuyo" output="screen" respawn="true">
 		<param name="~port" value="/dev/ttyACM0" />
 		<param name="~baud" value="115200" />
 		<param name="frame_id" value="laser_link" />
@@ -15,12 +14,18 @@
 		<param name="publish_multiecho" value="false" />
 		<param name="angle_min" value="-2.094395102" />
 		<param name="angle_max" value="2.094395102" />
-
-	</node>
+	</node> -->
 	
--->
-
-	<node pkg="mech_ros_pi" type="Aruco_detect.py" name="marker_detector" output="screen" respawn="true" />
-
+	<node pkg="mech_ros_pi" type="Aruco_detect.py" name="marker_detector" output="screen" respawn="true">
+		<param name="camera_frame" value="front_camera_link"/>
+		<param name="~markers_topic" value="/markers" />
+		<param name="~image_width" value="1280" />
+		<param name="~image_height" value="720" />
+		<param name="~fps" value="10" />
+		<param name="~calibration_file" value="/home/ubuntu/catkin_ws/src/mech_ros_pi/camera.yaml" />
+		<param name="~calibration_file_type" value="yaml" />
+		<param name="~marker_length" value="0.118" />
+		<param name="~dictionary" value="DICT_5X5_50" />
+	</node>
 
 </launch>

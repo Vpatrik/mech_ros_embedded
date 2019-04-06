@@ -7,7 +7,6 @@ Combined work with [Adyczech](https://github.com/adyczech).
 [<em>Charging_station.py</em>](src/Charging_station.py)
 
 ## Raspberry Pi 3B+ on robot
-[<em>Aruco_detect_follow.py</em>](src/Aruco_detect_follow.py)
 [<em>Aruco_detect.py</em>](src/Aruco_detect.py)
 
 ## Arduino on robot

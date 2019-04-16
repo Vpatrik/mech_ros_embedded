@@ -1,8 +1,6 @@
-// Roman Adamek 2019
-// Patrik Vavra 2019
-
 #include <Wire.h>
 #include <SparkFunLSM9DS1.h>
+#include <Servo.h>
 
 // Include ROS libraries
 #include <ros_uart.h>
@@ -15,8 +13,10 @@
 #include <mech_ros_msgs/RawImu.h>
 
 #define PI 3.1415926
-#define PWM_MAX_VAL 9600
+#define PWM_MAX_VAL 4800
 #define sign(x) ((x) > 0 ? 1: -1)
+#define R1 30
+#define R2 82
 
 /* Pin mapping */
 // Encoder pins
@@ -40,6 +40,10 @@ uint8_t mot_rr_dir = 1;
 uint8_t mot_rr_pwm = 3;
 uint8_t mot_rl_dir = 0;
 uint8_t mot_rl_pwm = 4;
+
+uint8_t lights = 12;
+uint8_t servo_1 = 2;
+uint8_t v_bat_pin = 15;
 
 /* Variable definitions */
 // Encoders related variables
@@ -91,6 +95,11 @@ float rotace = 0;
 float rozchod = 0.2386; //[m]
 float r_kola = 0.045394; //[m]
 
+float v_bat = 0;
+
+uint8_t fork_down = 101;
+uint8_t fork_up = 71;
+
 ros::NodeHandle nh;
 
 uint32_t IMU_last_time = 0;
@@ -126,6 +135,8 @@ LSM9DS1 imu;
 // http://www.ngdc.noaa.gov/geomag-web/#declination
 #define DECLINATION 4.395 // Declination (degrees) in Boulder, CO.
 
+Servo servo1;
+
 void vel_control( const geometry_msgs::Twist& cmd_msg) {
 
   //digitalWrite(13, HIGH-digitalRead(13));  // pro testovani blikani LED - potom smazat
@@ -153,9 +164,11 @@ ros::Subscriber<geometry_msgs::Twist> sub_vel("cmd_vel", vel_control);
 
 
 void servo_control( const std_msgs::Bool& cmd_servo) {
-  // 
-  if (cmd_servo.data == true){
-    // do something
+  //
+  if (cmd_servo.data == true) {
+    servo1.write(fork_up);
+  } else {
+    servo1.write(fork_down);
   }
 }
 
@@ -163,9 +176,11 @@ ros::Subscriber<std_msgs::Bool> sub_servo("cmd_servo", servo_control);
 
 
 void led_control( const std_msgs::Bool& cmd_led) {
-  // 
-  if (cmd_led.data == true){
-    // do something
+  //
+  if (cmd_led.data == true) {
+    digitalWrite(lights, HIGH);
+  } else {
+    digitalWrite(lights, LOW);
   }
 }
 
@@ -195,6 +210,12 @@ void setup()
   pinMode(drv_r_slp, OUTPUT);
   digitalWrite(drv_f_slp, HIGH);
   digitalWrite(drv_r_slp, HIGH);
+
+  pinMode(lights, OUTPUT);
+  digitalWrite(lights, LOW);
+  servo1.attach(servo_1);
+
+  analogReadResolution(12);
 
   attachInterrupt(mot_fr_A, mot_fr_A_isr, CHANGE);
   attachInterrupt(mot_fr_B, mot_fr_B_isr, CHANGE);
@@ -229,7 +250,7 @@ void setup()
   //digitalWrite(mot_rr_dir, 0);
   while (!nh.connected())
   {
-    nh.spinOnce();
+    nh.spinOnce();    
   }
   delay(5);
 }
@@ -290,14 +311,16 @@ void loop()
       Batt_last_time = current_time;
 
       // Fill battery voltage state
-      volt_battery.data = 0;
+      v_bat = (R1 + R2) * (float(analogRead(v_bat_pin)) / 4095 * 3.3) / R2;
+      volt_battery.data = round(v_bat * 100) - 335;
       volt_battery_pub.publish(&volt_battery);
+
     }
-    
+
     else if (current_time >= RPM_reg_last_time + 1000 / RPM_reg_update_rate)
     {
       RPM_reg_last_time = current_time;
-      
+
 
       /* Angle + filtration */
       angle_fr = ticks_fr / (5 * 4 * 312.5) * 2 * PI;

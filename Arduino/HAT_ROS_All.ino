@@ -111,6 +111,8 @@ uint32_t RPM_update_last_time = 0;
 uint32_t Batt_last_time = 0;
 uint8_t Batt_update_rate = 1; // [Hz]
 int current_time;
+int vel_received_time;
+bool flag_zero_velocity_set = false;
 
 #define BAUD 115200
 //#define BAUD 230400
@@ -142,6 +144,8 @@ void vel_control( const geometry_msgs::Twist& cmd_msg) {
   //digitalWrite(13, HIGH-digitalRead(13));  // pro testovani blikani LED - potom smazat
   podelna_rychlost = cmd_msg.linear.x;
   rotace  = cmd_msg.angular.z;
+  flag_zero_velocity_set = false;
+  vel_received_time = millis();
 
   /* Calculate required rpm */
   rpm_fl_r = (2 * podelna_rychlost - rotace * rozchod) / (2 * r_kola);
@@ -315,8 +319,21 @@ void loop()
       volt_battery.data = round(v_bat * 100) - 335;
       volt_battery_pub.publish(&volt_battery);
 
-    }
+      // Check if zero velocity flag is set
+      if(!flag_zero_velocity_set)
+      {
+        // If not set, check time from last received command
+        if (current_time >= vel_received_time + 1000 / Batt_update_rate)
+        {
+            rpm_fl_r = 0.0;
+            rpm_rr_r = 0.0;
+            rpm_fr_r = 0.0;
+            rpm_rl_r = 0.0;
+            flag_zero_velocity_set = true;
+        }
 
+      }
+    }
     else if (current_time >= RPM_reg_last_time + 1000 / RPM_reg_update_rate)
     {
       RPM_reg_last_time = current_time;

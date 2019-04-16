@@ -10,7 +10,7 @@
 		<param name="~markers_topic" value="/markers" />
 		<param name="~image_width" value="960" />
 		<param name="~image_height" value="540" />
-		<param name="~fps" value="17" />
+		<param name="~fps" value="15" />
 		<param name="~calibration_file" value="/home/ubuntu/catkin_ws/src/mech_ros_pi/camera_960_540.yaml" />
 		<param name="~calibration_file_type" value="yaml" />
 		<param name="~marker_length" value="0.118" />

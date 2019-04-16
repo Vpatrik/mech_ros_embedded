@@ -14,10 +14,11 @@ from mech_ros_msgs.msg import MarkerList
 from mech_ros_msgs.msg import Marker
 
 
-class VideoCapture:
+class VideoCapture(Thread):
 
     def __init__(self, ready):
-
+        Thread.__init__(self)
+        self.daemon = True
         self.ready = ready
         self.cap = cv2.VideoCapture(0)
         # self.cap = cv2.VideoCapture('tcpclientsrc host=mechros2.local port=8080  ! gdpdepay !  rtph264depay ! avdec_h264 ! videoconvert ! appsink sync=false', cv2.CAP_GSTREAMER)
@@ -37,6 +38,7 @@ class VideoCapture:
         self.current_frame = None
         self.time = None
         self.initialized = False
+        self.start()
 
         if not self.cap.isOpened():
             rospy.logerr("Cannot open stream")
@@ -44,17 +46,17 @@ class VideoCapture:
         else:
             rospy.loginfo("Stream OPENED")
 
-    def start(self):
-        Thread(target=self.update_frame, args=(), daemon=True).start()
 
-    def update_frame(self):
+    def run(self):
         while True:
             ret, frame = self.cap.read()
             if ret:
                 self.time = rospy.Time.now()
                 # Flip image and convert to grayscale
                 self.current_frame = cv2.cvtColor(cv2.flip(frame,-1),cv2.COLOR_BGR2GRAY)
-                self.ready.set()
+                if not(self.initialized):
+                    self.ready.set()
+                    self.initialized = True
 
     def get_current_frame(self):
         return self.current_frame, self.time
@@ -67,7 +69,6 @@ class Detector:
 
         self.ready = Event()
         self.stream = VideoCapture(self.ready)
-        self.stream.start()
 
         self.c_matrix = None
         self.dist_coeff = None
@@ -76,7 +77,8 @@ class Detector:
         self.marker_length = rospy.get_param("~marker_length", 0.118)
         marker_detector_topic = rospy.get_param("~markers_topic","/markers")
         self.frame_id = rospy.get_param("~camera_frame","front_camera_link")
-        calibration_file = rospy.get_param("~calibration_file", "/home/ubuntu/catkin_ws/src/mech_ros_pi/camera.yaml")
+        # calibration_file = rospy.get_param("~calibration_file", "/home/ubuntu/catkin_ws/src/mech_ros_pi/camera.yaml")
+        calibration_file = rospy.get_param("~calibration_file", "/home/patrik/catkin_ws/src/mech_ros/Config_ARuco/camera.yaml")
         calibration_file_type = rospy.get_param("~calibration_file_type","yaml")
         dictionary = rospy.get_param("~dictionary","DICT_5X5_50")
 
